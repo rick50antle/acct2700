@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACCT 2700 Grading Pathways</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .track-el { transition: opacity 0.15s; }
+    .track-el:hover { opacity: 0.82; }
+    #track-info-panel > div {
+      animation: fadeIn 0.2s ease-in-out;
+    }
+  </style>
+</head>
+<body style="min-height:100vh; background-color:#f5f1e8;">
+
+  <!-- Progress bar -->
+  <div style="height:4px; background:#d4c4a8;">
+    <div id="progress-bar" style="height:4px; background:#c9a227; transition:width 0.5s; width:0%;"></div>
+  </div>
+
+  <!-- Header -->
+  <div style="background:#00356b; padding:16px 24px; display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <div style="font-weight:700; font-size:17px; color:white; letter-spacing:0.01em;">ACCT 2700</div>
+      <div style="font-size:13px; color:#d4c4a8; margin-top:2px;">Grading Pathways</div>
+    </div>
+    <button onclick="handleRestart()"
+      style="background:transparent; border:none; cursor:pointer; color:white; font-size:20px; padding:4px 8px; border-radius:6px; opacity:0.8;"
+      title="Start over" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">↺</button>
+  </div>
+
+  <div style="padding:28px 20px;">
+    <div style="max-width:640px; margin:0 auto;" id="app-container"></div>
+  </div>
+
+  <script>
+    // ─── Colors ───────────────────────────────────────────────────────────────
+    const C = {
+      primary:    '#00356b',
+      sand:       '#f5f1e8',
+      earth:      '#8b7355',
+      earthLight: '#d4c4a8',
+      earthDark:  '#5c4d3d',
+      accent:     '#c9a227',
+      clay:       '#c4a574',
+      clayLight:  '#e8dcc8',
+      clayDark:   '#a08050',
+      // track colors
+      goldDark:   '#a07e1a',
+      goldLight:  '#faf3d9',
+      goldBorder: '#e0c45a',
+      blueMid:    '#2563a8',
+      blueLight:  '#dbeafe',
+      green:      '#16a34a',
+      greenLight: '#f0fdf4',
+      greenBorder:'#86efac',
+      // feedback
+      success:    '#22c55e',
+      warning:    '#f59e0b',
+      warningBg:  '#fffbeb',
+      error:      '#dc2626',
+      errorBg:    '#fef2f2',
+    };
+
+    // ─── State ────────────────────────────────────────────────────────────────
+    let step = 0;
+    let selectedGoal = null;
+
+    // ─── Navigation ───────────────────────────────────────────────────────────
+    function handleNext()    { step++; render(); }
+    function handleBack()    { step--; render(); }
+    function handleRestart() { step = 0; selectedGoal = null; render(); }
+    function changeGoal()    { step = 1; selectedGoal = null; render(); }
+    function selectGoal(goal) { selectedGoal = goal; handleNext(); }
+
+    // ─── Progress ─────────────────────────────────────────────────────────────
+    function totalSteps() {
+      if (selectedGoal === 'A') return 5;
+      return 4;
+    }
+    function getProgress() {
+      return Math.min(100, Math.round((step / totalSteps()) * 100));
+    }
+
+    // ─── Track info data ──────────────────────────────────────────────────────
+    const trackInfo = {
+      foundation: {
+        title: '🔷 Foundation',
+        color: C.primary, bg: '#e8eef5',
+        text: 'Everyone must complete these first, regardless of their grade goal. Problem Set 1 and Problem Set 2 must both be complete and correct. Any help is allowed on these assignments.'
+      },
+      part1b: {
+        title: '📝 Part 1 for a B',
+        color: C.goldDark, bg: C.goldLight,
+        text: 'The take-home final for students aiming for a B. A YALEiE-based comprehensive accounting exercise: recording transactions, adjusting entries, closing entries, and a complete set of financial statements. Must be complete and correct. The only person you can get help from is Rick — and he will provide it. Grading is very strict.'
+      },
+      part1bplus: {
+        title: '📝 Part 1 for a B+/A',
+        color: C.clayDark, bg: C.clayLight,
+        text: 'The take-home final for students aiming for a B+ or higher. Same YALEiE-based core exercise as Part 1 for a B — but with more complex transactions. Must be complete and correct. The only person you can get help from is Rick — and he will provide it. Grading is very strict.'
+      },
+      part2: {
+        title: '📝 Part 2 — Try for an A',
+        color: C.green, bg: C.greenLight,
+        text: 'An additional take-home exam required only for students trying for an A. It is administered on Canvas and has a time limit. It is based on a set of actual financial statements (not YALEiE-based) that will be distributed before the exam is due — you are free to analyze them and ask Rick questions before you start. Once you download the exam from Canvas, no help from any person is allowed. To prepare, start by reading the teaching note <em>Dissecting Financial Reports</em>, available on Canvas under the Resources tab. Sample exams are also available there. Graded on a points system: 90% or higher earns an A; 80–89% earns an A−; 79% or lower earns a B+.'
+      },
+      gradeB: {
+        title: '= Earn a B',
+        color: C.goldDark, bg: C.goldLight,
+        text: 'Complete the Foundation (Problem Sets 1 & 2) and Part 1 for a B to earn a B in the course.'
+      },
+      gradebplus: {
+        title: '= Earn a B+',
+        color: C.clayDark, bg: C.clayLight,
+        text: 'Complete the Foundation (Problem Sets 1 & 2) and Part 1 for a B+/A to earn a B+. This is the most common outcome — about 70% of students reach this level.'
+      },
+      gradeA: {
+        title: '= Earn an A− or A',
+        color: C.green, bg: C.greenLight,
+        text: 'Complete the Foundation, Part 1 for a B+/A, and Part 2. Your score on Part 2 determines your final grade: 90%+ earns an A, 80–89% earns an A−, and 79% or lower earns a B+. About 20% of students attempt this track.'
+      }
+    };
+
+    function showTrackInfo(key) {
+      const info = trackInfo[key];
+      document.getElementById('track-info-panel').innerHTML = `
+        <div style="border-left:4px solid ${info.color}; background:${info.bg}; border-radius:10px; padding:14px 18px;">
+          <div style="font-weight:700; color:${info.color}; margin-bottom:6px; font-size:15px;">${info.title}</div>
+          <div style="color:${C.earthDark}; font-size:14px; line-height:1.65;">${info.text}</div>
+        </div>`;
+    }
+
+    // ─── Step templates ───────────────────────────────────────────────────────
+
+    function welcomeStep() {
+      return `
+        <div class="fade-in">
+          <div style="text-align:center; margin-bottom:18px;">
+            <h1 style="font-size:26px; font-weight:700; color:${C.primary}; margin-bottom:4px;">How Your Grade Works</h1>
+            <p style="color:${C.earth}; font-size:14px;">Click any element in the diagram below to learn what it means.</p>
+          </div>
+
+          <!-- Interactive hurdle track -->
+          <div style="background:#0f172a; border-radius:12px; padding:16px 12px 12px; margin-bottom:16px;">
+            <svg viewBox="0 0 670 286" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;" font-family="Inter,system-ui,sans-serif">
+
+              <!-- Track labels -->
+              <text x="4" y="84"  font-size="8.5" font-weight="700" fill="#e8c84a">EARN A B</text>
+              <text x="4" y="158" font-size="8.5" font-weight="700" fill="#d4c4a8">EARN A B+</text>
+              <text x="4" y="228" font-size="8.5" font-weight="700" fill="#4ade80">TRY FOR</text>
+              <text x="4" y="239" font-size="8.5" font-weight="700" fill="#4ade80">AN A</text>
+
+              <!-- Lane backgrounds -->
+              <rect x="72" y="58"  width="592" height="52" rx="6" fill="#1c1609"/>
+              <rect x="72" y="128" width="592" height="52" rx="6" fill="#1a160e"/>
+              <rect x="72" y="198" width="592" height="76" rx="6" fill="#061a0d"/>
+
+              <!-- ── EARN A B ── -->
+              <g class="track-el" onclick="showTrackInfo('foundation')" style="cursor:pointer">
+                <rect x="82" y="67" width="118" height="34" rx="6" fill="#00356b"/>
+                <text x="141" y="81"  text-anchor="middle" font-size="10" font-weight="700" fill="white">🔷 Foundation</text>
+                <text x="141" y="94"  text-anchor="middle" font-size="8.5" fill="#d4c4a8">PS1 + PS2</text>
+              </g>
+              <text x="212" y="89" text-anchor="middle" font-size="15" fill="#8b7355">→</text>
+              <g class="track-el" onclick="showTrackInfo('part1b')" style="cursor:pointer">
+                <rect x="222" y="67" width="148" height="34" rx="6" fill="#a07e1a"/>
+                <text x="296" y="81"  text-anchor="middle" font-size="10" font-weight="700" fill="white">📝 Part 1 for a B</text>
+                <text x="296" y="94"  text-anchor="middle" font-size="8.5" fill="#faf3d9">Complete &amp; correct</text>
+              </g>
+              <g class="track-el" onclick="showTrackInfo('gradeB')" style="cursor:pointer">
+                <rect x="574" y="70" width="80" height="26" rx="13" fill="#c9a227"/>
+                <text x="614" y="87"  text-anchor="middle" font-size="12" font-weight="800" fill="white">= B</text>
+              </g>
+
+              <!-- ── EARN A B+ ── -->
+              <g class="track-el" onclick="showTrackInfo('foundation')" style="cursor:pointer">
+                <rect x="82" y="137" width="118" height="34" rx="6" fill="#00356b"/>
+                <text x="141" y="151" text-anchor="middle" font-size="10" font-weight="700" fill="white">🔷 Foundation</text>
+                <text x="141" y="164" text-anchor="middle" font-size="8.5" fill="#d4c4a8">PS1 + PS2</text>
+              </g>
+              <text x="212" y="159" text-anchor="middle" font-size="15" fill="#8b7355">→</text>
+              <g class="track-el" onclick="showTrackInfo('part1bplus')" style="cursor:pointer">
+                <rect x="222" y="137" width="158" height="34" rx="6" fill="#a08050"/>
+                <text x="301" y="151" text-anchor="middle" font-size="10" font-weight="700" fill="white">📝 Part 1 for a B+/A</text>
+                <text x="301" y="164" text-anchor="middle" font-size="8.5" fill="#e8dcc8">Complete &amp; correct</text>
+              </g>
+              <g class="track-el" onclick="showTrackInfo('gradebplus')" style="cursor:pointer">
+                <rect x="570" y="141" width="84" height="26" rx="13" fill="#8b7355"/>
+                <text x="612" y="158" text-anchor="middle" font-size="12" font-weight="800" fill="white">= B+</text>
+              </g>
+
+              <!-- ── TRY FOR AN A ── -->
+              <g class="track-el" onclick="showTrackInfo('foundation')" style="cursor:pointer">
+                <rect x="82" y="207" width="118" height="34" rx="6" fill="#00356b"/>
+                <text x="141" y="221" text-anchor="middle" font-size="10" font-weight="700" fill="white">🔷 Foundation</text>
+                <text x="141" y="234" text-anchor="middle" font-size="8.5" fill="#d4c4a8">PS1 + PS2</text>
+              </g>
+              <text x="212" y="229" text-anchor="middle" font-size="15" fill="#4b7a5a">→</text>
+              <g class="track-el" onclick="showTrackInfo('part1bplus')" style="cursor:pointer">
+                <rect x="222" y="207" width="158" height="34" rx="6" fill="#a08050"/>
+                <text x="301" y="221" text-anchor="middle" font-size="10" font-weight="700" fill="white">📝 Part 1 for a B+/A</text>
+                <text x="301" y="234" text-anchor="middle" font-size="8.5" fill="#e8dcc8">Complete &amp; correct</text>
+              </g>
+              <text x="392" y="229" text-anchor="middle" font-size="15" fill="#4b7a5a">→</text>
+              <g class="track-el" onclick="showTrackInfo('part2')" style="cursor:pointer">
+                <rect x="402" y="207" width="142" height="34" rx="6" fill="#16a34a"/>
+                <text x="473" y="221" text-anchor="middle" font-size="10" font-weight="700" fill="white">📝 Part 2</text>
+                <text x="473" y="234" text-anchor="middle" font-size="8.5" fill="#d1fae5">Score target · Timed</text>
+              </g>
+              <g class="track-el" onclick="showTrackInfo('gradeA')" style="cursor:pointer">
+                <rect x="558" y="200" width="100" height="20" rx="10" fill="#16a34a"/>
+                <text x="608" y="214" text-anchor="middle" font-size="9.5" font-weight="800" fill="white">90%+ = A</text>
+                <rect x="558" y="224" width="100" height="20" rx="10" fill="#0d9488"/>
+                <text x="608" y="238" text-anchor="middle" font-size="9.5" font-weight="800" fill="white">80–89% = A−</text>
+                <rect x="558" y="248" width="100" height="20" rx="10" fill="#a08050"/>
+                <text x="608" y="262" text-anchor="middle" font-size="9.5" font-weight="800" fill="white">≤79% = B+</text>
+              </g>
+
+            </svg>
+          </div>
+
+          <!-- Info panel -->
+          <div id="track-info-panel" style="min-height:72px; margin-bottom:22px;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:8px; color:${C.earth}; font-size:14px; padding:20px; border:2px dashed ${C.earthLight}; border-radius:10px; background:white;">
+              <span style="font-size:20px;">👆</span>
+              <span>Click any element above to learn what it means</span>
+            </div>
+          </div>
+
+          <div style="text-align:center;">
+            <button onclick="handleNext()"
+              style="background:${C.primary}; color:white; font-weight:600; padding:12px 32px; border-radius:999px; font-size:16px; border:none; cursor:pointer; transition:opacity 0.15s;"
+              onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+              Get Started →
+            </button>
+          </div>
+        </div>`;
+    }
+
+    function goalStep() {
+      return `
+        <div style="text-align:center;" class="fade-in">
+          <h2 style="font-size:22px; font-weight:700; color:${C.primary}; margin-bottom:6px;">What grade are you aiming for?</h2>
+          <p style="color:${C.earth}; margin-bottom:28px; font-size:14px;">Select your goal to see what's required</p>
+
+          <div style="display:flex; flex-direction:column; gap:14px; max-width:480px; margin:0 auto;">
+
+            <button onclick="selectGoal('B')"
+              style="background:${C.goldLight}; border:2px solid ${C.goldBorder}; border-radius:12px; padding:18px 20px; text-align:left; cursor:pointer; transition:background 0.15s; width:100%;"
+              onmouseover="this.style.background='#f2e8b0'" onmouseout="this.style.background='${C.goldLight}'">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight:700; color:${C.earthDark}; font-size:18px;">Earn a B</div>
+                  <div style="color:${C.earth}; font-size:13px; margin-top:2px;">Solid foundation, manageable workload</div>
+                </div>
+                <div style="background:${C.accent}; color:white; font-weight:700; font-size:18px; width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">B</div>
+              </div>
+            </button>
+
+            <button onclick="selectGoal('B+')"
+              style="background:${C.clayLight}; border:2px solid ${C.earthLight}; border-radius:12px; padding:18px 20px; text-align:left; cursor:pointer; transition:background 0.15s; width:100%;"
+              onmouseover="this.style.background='#ddd0b8'" onmouseout="this.style.background='${C.clayLight}'">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight:700; color:${C.earthDark}; font-size:18px;">Earn a B+</div>
+                  <div style="color:${C.earth}; font-size:13px; margin-top:2px;">Most common outcome (~70% of students)</div>
+                </div>
+                <div style="background:${C.clayDark}; color:white; font-weight:700; font-size:18px; width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">B+</div>
+              </div>
+            </button>
+
+            <button onclick="selectGoal('A')"
+              style="background:${C.greenLight}; border:2px solid ${C.greenBorder}; border-radius:12px; padding:18px 20px; text-align:left; cursor:pointer; transition:background 0.15s; width:100%;"
+              onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='${C.greenLight}'">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight:700; color:${C.earthDark}; font-size:18px;">Try for an A− or A</div>
+                  <div style="color:${C.earth}; font-size:13px; margin-top:2px;">For the ambitious (~20% of students)</div>
+                </div>
+                <div style="background:${C.green}; color:white; font-weight:700; font-size:18px; width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">A</div>
+              </div>
+            </button>
+          </div>
+
+          <button onclick="handleBack()" style="margin-top:28px; color:${C.earth}; background:none; border:none; cursor:pointer; padding:8px 16px; font-size:14px;"
+            onmouseover="this.style.color='${C.earthDark}'" onmouseout="this.style.color='${C.earth}'">← Back</button>
+        </div>`;
+    }
+
+    function foundationStep() {
+      const displayTotal = selectedGoal === 'A' ? 3 : 2;
+      return `
+        <div class="fade-in">
+          <div style="text-align:center; margin-bottom:22px;">
+            <div style="display:inline-block; background:#e8eef5; color:${C.primary}; padding:4px 14px; border-radius:999px; font-size:13px; margin-bottom:10px; font-weight:500;">
+              Step 1 of ${displayTotal}
+            </div>
+            <h2 style="font-size:22px; font-weight:700; color:${C.primary};">Foundation Requirements</h2>
+            <p style="color:${C.earth}; font-size:14px; margin-top:4px;">Required for <strong>everyone</strong>, regardless of target grade</p>
+          </div>
+
+          <div style="background:white; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:22px; max-width:480px; margin:0 auto; border:1px solid ${C.earthLight};">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+
+              <div style="display:flex; align-items:flex-start; gap:12px; padding:12px; background:#e8eef5; border-radius:8px;">
+                <div style="background:${C.primary}; color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">✓</div>
+                <div>
+                  <div style="font-weight:600; color:${C.earthDark};">Problem Set 1</div>
+                  <div style="font-size:13px; color:${C.earth}; margin-top:3px;">Must be complete and correct</div>
+                  <div style="font-size:11px; background:#d1fae5; color:#166534; padding:2px 8px; border-radius:999px; display:inline-block; margin-top:5px;">Any help allowed</div>
+                </div>
+              </div>
+
+              <div style="display:flex; align-items:flex-start; gap:12px; padding:12px; background:#e8eef5; border-radius:8px;">
+                <div style="background:${C.primary}; color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">✓</div>
+                <div>
+                  <div style="font-weight:600; color:${C.earthDark};">Problem Set 2</div>
+                  <div style="font-size:13px; color:${C.earth}; margin-top:3px;">Must be complete and correct</div>
+                  <div style="font-size:11px; background:#d1fae5; color:#166534; padding:2px 8px; border-radius:999px; display:inline-block; margin-top:5px;">Any help allowed</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:center; gap:16px; margin-top:28px;">
+            <button onclick="handleBack()" style="color:${C.earth}; background:none; border:none; cursor:pointer; padding:8px 16px; font-size:14px;"
+              onmouseover="this.style.color='${C.earthDark}'" onmouseout="this.style.color='${C.earth}'">← Back</button>
+            <button onclick="handleNext()" style="background:${C.primary}; color:white; font-weight:600; padding:10px 24px; border-radius:999px; border:none; cursor:pointer; transition:opacity 0.15s;"
+              onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">Next →</button>
+          </div>
+        </div>`;
+    }
+
+    function earnBStep() {
+      return `
+        <div class="fade-in">
+          <div style="text-align:center; margin-bottom:22px;">
+            <div style="display:inline-block; background:${C.goldLight}; color:${C.goldDark}; padding:4px 14px; border-radius:999px; font-size:13px; margin-bottom:10px; font-weight:500; border:1px solid ${C.goldBorder};">
+              Step 2 of 2
+            </div>
+            <h2 style="font-size:22px; font-weight:700; color:${C.goldDark};">Take-home Final for a B</h2>
+            <p style="color:${C.earth}; font-size:14px; margin-top:4px;">Add this to the foundation requirements</p>
+          </div>
+
+          <div style="background:white; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:22px; max-width:480px; margin:0 auto; border:1px solid ${C.earthLight};">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+
+              <div style="display:flex; align-items:flex-start; gap:12px; padding:12px; background:${C.goldLight}; border-radius:8px;">
+                <div style="background:${C.accent}; color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">✓</div>
+                <div>
+                  <div style="font-weight:600; color:${C.earthDark};">Part 1 for a B</div>
+                  <div style="font-size:13px; color:${C.earth}; margin-top:3px;">Must be complete and correct</div>
+                  <div style="font-size:11px; background:${C.warningBg}; color:#92400e; padding:2px 8px; border-radius:999px; display:inline-block; margin-top:5px;">⚠ Only Rick can help — and he will</div>
+                </div>
+              </div>
+
+              <div style="background:${C.goldLight}; border:1px solid ${C.goldBorder}; border-radius:8px; padding:14px;">
+                <p style="font-size:13px; color:${C.earthDark}; margin:0;">
+                  <strong>What's on Part 1 for a B?</strong><br>
+                  A YALEiE-based comprehensive accounting exercise requiring you to record transactions, make adjusting entries, make closing entries, and create a complete set of financial statements.
+                </p>
+              </div>
+
+              <div style="padding:12px; background:#fef2f2; border:1px solid #fca5a5; border-radius:8px;">
+                <p style="font-size:13px; color:#991b1b; margin:0;">
+                  <strong>⚠ Warning:</strong> Grading is <em>very strict</em>. An extremely high level of accuracy is expected, consistent with real-world financial statement requirements.
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          <div style="margin-top:18px; max-width:480px; margin-left:auto; margin-right:auto; background:${C.accent}; color:white; border-radius:12px; padding:14px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+            <div style="font-size:13px;">Complete Foundation + Part 1 for a B</div>
+            <div style="font-size:19px; font-weight:700; margin-top:2px;">= Earn a B</div>
+          </div>
+
+          <div style="display:flex; justify-content:center; gap:16px; margin-top:18px;">
+            <button onclick="handleBack()" style="color:${C.earth}; background:none; border:none; cursor:pointer; padding:8px 16px; font-size:14px;"
+              onmouseover="this.style.color='${C.earthDark}'" onmouseout="this.style.color='${C.earth}'">← Back</button>
+            <button onclick="handleNext()" style="background:${C.goldDark}; color:white; font-weight:600; padding:10px 24px; border-radius:999px; border:none; cursor:pointer; transition:opacity 0.15s;"
+              onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">See Summary →</button>
+          </div>
+        </div>`;
+    }
+
+    function earnBPlusStep() {
+      const displayTotal = selectedGoal === 'A' ? 3 : 2;
+      const isLastStep   = selectedGoal === 'B+';
+      return `
+        <div class="fade-in">
+          <div style="text-align:center; margin-bottom:22px;">
+            <div style="display:inline-block; background:${C.clayLight}; color:${C.clayDark}; padding:4px 14px; border-radius:999px; font-size:13px; margin-bottom:10px; font-weight:500; border:1px solid ${C.earthLight};">
+              Step 2 of ${displayTotal}
+            </div>
+            <h2 style="font-size:22px; font-weight:700; color:${C.clayDark};">Take-home Final for a B+/A</h2>
+            <p style="color:${C.earth}; font-size:14px; margin-top:4px;">Add this to the foundation requirements</p>
+          </div>
+
+          <div style="background:white; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:22px; max-width:480px; margin:0 auto; border:1px solid ${C.earthLight};">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+
+              <div style="display:flex; align-items:flex-start; gap:12px; padding:12px; background:${C.clayLight}; border-radius:8px;">
+                <div style="background:${C.clayDark}; color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">✓</div>
+                <div>
+                  <div style="font-weight:600; color:${C.earthDark};">Part 1 for a B+/A</div>
+                  <div style="font-size:13px; color:${C.earth}; margin-top:3px;">Must be complete and correct</div>
+                  <div style="font-size:11px; background:${C.warningBg}; color:#92400e; padding:2px 8px; border-radius:999px; display:inline-block; margin-top:5px;">⚠ Only Rick can help — and he will</div>
+                </div>
+              </div>
+
+              <div style="background:${C.clayLight}; border:1px solid ${C.earthLight}; border-radius:8px; padding:14px;">
+                <p style="font-size:13px; color:${C.earthDark}; margin:0;">
+                  <strong>What's on Part 1 for a B+/A?</strong><br>
+                  A YALEiE-based comprehensive accounting exercise requiring you to record transactions, make adjusting entries, make closing entries, and create a complete set of financial statements — including more complex transactions than the B version.
+                </p>
+              </div>
+
+              <div style="padding:12px; background:#fef2f2; border:1px solid #fca5a5; border-radius:8px;">
+                <p style="font-size:13px; color:#991b1b; margin:0;">
+                  <strong>⚠ Warning:</strong> Grading is <em>very strict</em>. An extremely high level of accuracy is expected, consistent with real-world financial statement requirements.
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          <div style="margin-top:18px; max-width:480px; margin-left:auto; margin-right:auto; background:${C.earth}; color:white; border-radius:12px; padding:14px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+            ${isLastStep
+              ? `<div style="font-size:13px;">Complete Foundation + Part 1 for a B+/A</div>
+                 <div style="font-size:19px; font-weight:700; margin-top:2px;">= Earn a B+</div>`
+              : `<div style="font-size:13px;">Complete Foundation + Part 1 for a B+/A</div>
+                 <div style="font-size:19px; font-weight:700; margin-top:2px;">= Earn a B+ / Keep going for an A →</div>`
+            }
+          </div>
+
+          <div style="display:flex; justify-content:center; gap:16px; margin-top:18px;">
+            <button onclick="handleBack()" style="color:${C.earth}; background:none; border:none; cursor:pointer; padding:8px 16px; font-size:14px;"
+              onmouseover="this.style.color='${C.earthDark}'" onmouseout="this.style.color='${C.earth}'">← Back</button>
+            <button onclick="handleNext()" style="background:${C.clayDark}; color:white; font-weight:600; padding:10px 24px; border-radius:999px; border:none; cursor:pointer; transition:opacity 0.15s;"
+              onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+              ${isLastStep ? 'See Summary →' : 'Next →'}
+            </button>
+          </div>
+        </div>`;
+    }
+
+    function earnAStep() {
+      return `
+        <div class="fade-in">
+          <div style="text-align:center; margin-bottom:22px;">
+            <div style="display:inline-block; background:${C.greenLight}; color:${C.green}; padding:4px 14px; border-radius:999px; font-size:13px; margin-bottom:10px; font-weight:500; border:1px solid ${C.greenBorder};">
+              Step 3 of 3
+            </div>
+            <h2 style="font-size:22px; font-weight:700; color:#166534;">Take-home Final to Try for an A</h2>
+            <p style="color:${C.earth}; font-size:14px; margin-top:4px;">Add this to everything before</p>
+          </div>
+
+          <div style="background:white; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:22px; max-width:480px; margin:0 auto; border:1px solid ${C.earthLight};">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+
+              <!-- What it is -->
+              <div style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:${C.goldLight}; border:1px solid ${C.goldBorder}; border-radius:8px;">
+                <span style="font-size:16px; flex-shrink:0;">ℹ</span>
+                <p style="font-size:13px; color:${C.earthDark}; margin:0;">
+                  Based on an <strong>actual set of financial statements</strong> — not a YALEiE-based exam. Graded on a points system with a time limit on Canvas.
+                </p>
+              </div>
+
+              <!-- Before the exam -->
+              <div style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:${C.greenLight}; border:1px solid ${C.greenBorder}; border-radius:8px;">
+                <span style="font-size:16px; flex-shrink:0;">📋</span>
+                <p style="font-size:13px; color:${C.earthDark}; margin:0;">
+                  The financial statements will be <strong>distributed before the exam is due</strong>. You are free to analyze them and ask Rick questions before you start the Canvas exam.
+                </p>
+              </div>
+
+              <!-- Once started -->
+              <div style="padding:12px; background:#fef2f2; border:1px solid #fca5a5; border-radius:8px;">
+                <p style="font-size:13px; color:#991b1b; margin:0;">
+                  <strong>⚠ Once you download the exam from Canvas, no help from any person is allowed.</strong>
+                </p>
+              </div>
+
+              <!-- Scoring thresholds -->
+              <div style="border-radius:8px; overflow:hidden; border:1px solid ${C.greenBorder};">
+                <div style="background:${C.green}; color:white; font-size:11px; font-weight:600; padding:6px 12px; letter-spacing:0.05em; text-transform:uppercase;">Scoring</div>
+                <div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:${C.greenLight}; border-bottom:1px solid ${C.greenBorder};">
+                    <span style="font-size:13px; font-weight:600; color:#166534;">90% or higher</span>
+                    <span style="font-size:13px; font-weight:700; color:${C.green}; background:#dcfce7; padding:3px 12px; border-radius:999px;">Earn an A</span>
+                  </div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:white; border-bottom:1px solid ${C.greenBorder};">
+                    <span style="font-size:13px; font-weight:600; color:${C.earthDark};">80% – 89%</span>
+                    <span style="font-size:13px; font-weight:700; color:#0f766e; background:#ccfbf1; padding:3px 12px; border-radius:999px;">Earn an A−</span>
+                  </div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:white;">
+                    <span style="font-size:13px; font-weight:600; color:${C.earthDark};">79% or lower</span>
+                    <span style="font-size:13px; font-weight:700; color:${C.clayDark}; background:${C.clayLight}; padding:3px 12px; border-radius:999px;">Earn a B+</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- How to prepare -->
+              <div style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:#e8eef5; border:1px solid #bfdbfe; border-radius:8px;">
+                <span style="color:${C.primary}; font-size:16px; flex-shrink:0;">ℹ</span>
+                <p style="font-size:13px; color:${C.primary}; margin:0;">
+                  <strong>Step 1 to prepare:</strong> Read the teaching note <em>Dissecting Financial Reports</em>, available on <strong>Canvas</strong> under the <strong>Resources</strong> tab. Sample exams are available there too.
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          <div style="margin-top:18px; max-width:480px; margin-left:auto; margin-right:auto; background:${C.green}; color:white; border-radius:12px; padding:14px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+            <div style="font-size:13px;">Complete Foundation + Part 1 for a B+/A + Part 2</div>
+            <div style="font-size:13px; font-weight:600; margin-top:3px;">AND score 90%+ for an A, 80–89% for an A−, or 79% or lower for a B+</div>
+            <div style="font-size:19px; font-weight:700; margin-top:4px;">= Earn an A− or A</div>
+          </div>
+
+          <div style="display:flex; justify-content:center; gap:16px; margin-top:18px;">
+            <button onclick="handleBack()" style="color:${C.earth}; background:none; border:none; cursor:pointer; padding:8px 16px; font-size:14px;"
+              onmouseover="this.style.color='${C.earthDark}'" onmouseout="this.style.color='${C.earth}'">← Back</button>
+            <button onclick="handleNext()" style="background:${C.green}; color:white; font-weight:600; padding:10px 24px; border-radius:999px; border:none; cursor:pointer; transition:opacity 0.15s;"
+              onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">See Summary →</button>
+          </div>
+        </div>`;
+    }
+
+    function summaryStep() {
+      const configs = {
+        B:   { bg: C.goldLight,  border: C.goldBorder,  summary: C.accent,    grade: 'B',      bcard: true,  bpluscard: false, acard: false },
+        'B+': { bg: C.clayLight, border: C.earthLight,  summary: C.earth,     grade: 'B+',     bcard: false, bpluscard: true,  acard: false },
+        A:   { bg: C.greenLight, border: C.greenBorder, summary: C.green,     grade: 'A− or A', bcard: false, bpluscard: true,  acard: true  },
+      };
+      const cf = configs[selectedGoal];
+
+      const card = (icon, title, sub) => `
+        <div style="background:white; border-radius:8px; padding:12px 14px; border:1px solid ${C.earthLight};">
+          <div style="font-weight:600; color:${C.earthDark};">${icon} ${title}</div>
+          <div style="font-size:13px; color:${C.earth}; margin-top:3px; margin-left:20px;">${sub}</div>
+        </div>`;
+
+      let cards = card('✅', 'Foundation', 'Problem Set 1 &amp; Problem Set 2');
+      if (cf.bcard)    cards += card('✅', 'Take-home Final for a B', 'Part 1 for a B — complete and correct');
+      if (cf.bpluscard) cards += card('✅', 'Take-home Final for a B+/A', 'Part 1 for a B+/A — complete and correct');
+      if (cf.acard)    cards += card('✅', 'Take-home Final — Part 2', 'Points-based: 90%+ = A, 80–89% = A−, 79% or lower = B+');
+
+      return `
+        <div class="fade-in">
+          <div style="text-align:center; margin-bottom:22px;">
+            <h2 style="font-size:22px; font-weight:700; color:${C.primary}; margin-bottom:6px;">Your Roadmap</h2>
+            <p style="color:${C.earth}; font-size:14px;">Here's everything you need to earn a <strong>${cf.grade}</strong></p>
+          </div>
+
+          <div style="background:${cf.bg}; border:1px solid ${cf.border}; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:22px; max-width:480px; margin:0 auto;">
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              ${cards}
+            </div>
+          </div>
+
+          <div style="margin-top:18px; max-width:480px; margin-left:auto; margin-right:auto; background:${cf.summary}; color:white; border-radius:12px; padding:14px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+            <div style="font-size:19px; font-weight:700;">→ Earn a ${cf.grade}</div>
+          </div>
+
+          <div style="display:flex; justify-content:center; gap:12px; margin-top:24px; flex-wrap:wrap;">
+            <button onclick="handleRestart()"
+              style="background:${C.clayLight}; color:${C.earthDark}; font-weight:600; padding:10px 20px; border-radius:999px; border:1px solid ${C.earthLight}; cursor:pointer; transition:background 0.15s;"
+              onmouseover="this.style.background='${C.earthLight}'" onmouseout="this.style.background='${C.clayLight}'">
+              ↺ Start Over
+            </button>
+            <button onclick="changeGoal()"
+              style="background:${C.primary}; color:white; font-weight:600; padding:10px 20px; border-radius:999px; border:none; cursor:pointer; transition:opacity 0.15s;"
+              onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+              Choose Different Goal
+            </button>
+          </div>
+        </div>`;
+    }
+
+    // ─── Main render ──────────────────────────────────────────────────────────
+    function render() {
+      document.getElementById('progress-bar').style.width = getProgress() + '%';
+
+      let content = '';
+
+      if (step === 0) {
+        content = welcomeStep();
+      } else if (step === 1) {
+        content = goalStep();
+      } else if (step === 2) {
+        content = foundationStep();
+      } else if (step === 3) {
+        if (selectedGoal === 'B') content = earnBStep();
+        else                       content = earnBPlusStep();
+      } else if (step === 4) {
+        if (selectedGoal === 'B')  content = summaryStep();
+        if (selectedGoal === 'B+') content = summaryStep();
+        if (selectedGoal === 'A')  content = earnAStep();
+      } else if (step === 5) {
+        content = summaryStep();
+      } else {
+        content = summaryStep();
+      }
+
+      document.getElementById('app-container').innerHTML = content;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    render();
+  </script>
+</body>
+</html>
